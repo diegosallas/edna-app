@@ -92,6 +92,19 @@
   .rodape a { color: inherit; }
   #app { display: none; }
   #app.visivel { display: block; }
+  .campo-texto { position: relative; }
+  #limpar {
+    position: absolute; right: 8px; top: 8px; width: 32px; height: 32px; border-radius: 50%; border: none;
+    background: var(--linha); color: var(--texto); font: inherit; font-size: 20px; line-height: 1; cursor: pointer;
+  }
+  #previa-voz { margin-top: 8px; font-size: 14px; color: var(--suave); background: var(--rosa-claro); border-radius: 12px; padding: 10px 12px; }
+  #previa-voz button { background: none; border: none; color: var(--rosa); font: inherit; font-weight: 650; text-decoration: underline; cursor: pointer; padding: 0; }
+  #mic.ouvindo { border-style: solid; background: var(--rosa-claro); }
+  .botao-avisos {
+    width: 100%; margin-top: 22px; font: inherit; font-size: 14px; border: 1px solid var(--linha); border-radius: 12px;
+    padding: 10px; background: var(--cartao); color: var(--suave); cursor: pointer;
+  }
+  .botao-avisos:disabled { opacity: .7; cursor: default; }
 </style>
 </head>
 <body>
@@ -109,7 +122,11 @@
 
 <div id="app">
   <form id="form" autocomplete="off">
-    <textarea id="texto" maxlength="400" placeholder="O que você precisa?"></textarea>
+    <div class="campo-texto">
+      <textarea id="texto" maxlength="400" placeholder="O que você precisa?"></textarea>
+      <button type="button" id="limpar" aria-label="Apagar o texto" hidden>×</button>
+    </div>
+    <div id="previa-voz" hidden>🎙 Transcrevi o que você falou. Confere o texto acima; se saiu errado, <button type="button" id="previa-apagar">apaga e grava de novo</button>.</div>
     <div class="botoes">
       <button type="button" id="quando-der">Quando der<small>sem pressa</small></button>
       <button type="button" id="urgente">Urgente<small>precisa logo</small></button>
@@ -122,6 +139,7 @@
     </div>
     <div id="aviso" role="status" aria-live="polite"></div>
   </form>
+  <button type="button" id="avisos" class="botao-avisos">🔔 Me avisa quando ele fizer</button>
   <h2>Seus pedidos</h2>
   <ul id="lista"><li class="vazio" style="border:none;background:none">carregando…</li></ul>
 </div>

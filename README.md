@@ -32,6 +32,14 @@ node --test site/testes/datas.test.mjs
 go test ./cmd/mozao
 ```
 
+## Avisos no celular
+
+O dono liga **🔔 Avisar neste aparelho** (no menu ♥) e recebe notificação
+quando chega pedido, mesmo com o app fechado — é Web Push, assinado com o par
+VAPID que o servidor gera na primeira subida (`dados/vapid.json`). Quem manda
+o pedido pode ligar **🔔 Me avisa quando ele fizer**. No iPhone só funciona
+com o app instalado na Tela de Início.
+
 ## Segurança e privacidade
 
 - Sem conta e sem senha: a identidade é por chaves aleatórias (segredo do dono,

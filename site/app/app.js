@@ -182,6 +182,10 @@ async function abrirAmor() {
   }
   linkDiv.hidden = false;
   linkDiv.textContent = amor.linkDoConvite(vinculo.convite);
+  const botaoAvisos = document.getElementById("botao-avisos");
+  const pode = amor.podeAvisar();
+  botaoAvisos.textContent = !pode.ok ? "🔔 " + pode.motivo
+    : (Notification.permission === "granted" ? "🔔 Avisos ligados neste aparelho" : "🔔 Avisar neste aparelho quando chegar pedido");
   document.getElementById("amor-explica").textContent = "Mande este link para quem você ama. Quem abrir instala o app e passa a mandar pedidos para a sua coluna ♥.";
   document.getElementById("amor-quem").textContent = "";
   amor.verConta(vinculo.segredo).then((c) => {
@@ -210,6 +214,13 @@ document.getElementById("menu-amor").addEventListener("click", async (ev) => {
   if (acao === "novo-link") {
     try { const c = await amor.novoConvite(vinculo.segredo); vinculo.convite = c.convite; salvarVinculo(); document.getElementById("link-convite").textContent = amor.linkDoConvite(c.convite); avisar("Link trocado — o antigo não vale mais"); }
     catch (e) { avisar("Sem conexão"); }
+  }
+  if (acao === "avisos") {
+    try {
+      await amor.ativarAvisos((sub) => amor.registrarPushDono(vinculo.segredo, sub));
+      document.getElementById("botao-avisos").textContent = "🔔 Avisos ligados neste aparelho";
+      avisar("Pronto: você recebe aviso mesmo com o app fechado");
+    } catch (e) { avisar(e.message); }
   }
   if (acao === "desligar") {
     if (!confirm("Desligar todo mundo desta lista? Quem já entrou vai precisar de um link novo.")) return;
@@ -508,6 +519,7 @@ setInterval(desenhar, 60000);
 // Pedidos do amor chegam de fora: busca ao abrir e a cada 30 s com a tela visível.
 buscarPedidos(true);
 setInterval(buscarPedidos, 30000);
+if (vinculo) amor.renovarAvisos((sub) => amor.registrarPushDono(vinculo.segredo, sub));
 document.addEventListener("visibilitychange", () => { if (!document.hidden) { desenhar(); buscarPedidos(true); } });
 
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});

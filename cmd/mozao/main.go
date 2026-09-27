@@ -52,10 +52,11 @@ const (
 )
 
 type parceiro struct {
-	ID        string    `json:"id"` // derivado do token; é o que liga o pedido a quem mandou
-	TokenHash string    `json:"token_hash"`
-	Nome      string    `json:"nome"`
-	Desde     time.Time `json:"desde"`
+	ID        string      `json:"id"` // derivado do token; é o que liga o pedido a quem mandou
+	TokenHash string      `json:"token_hash"`
+	Nome      string      `json:"nome"`
+	Desde     time.Time   `json:"desde"`
+	Push      []inscricao `json:"push,omitempty"` // aparelhos que querem saber do "feito"
 }
 
 type pedido struct {
@@ -70,14 +71,15 @@ type pedido struct {
 }
 
 type conta struct {
-	ID          string     `json:"id"`
-	Nome        string     `json:"nome"`
-	SegredoHash string     `json:"segredo_hash"`
-	ConviteHash string     `json:"convite_hash"`
-	Parceiros   []parceiro `json:"parceiros"`
-	Pedidos     []pedido   `json:"pedidos"`
-	ProximoID   int        `json:"proximo_id"`
-	Criada      time.Time  `json:"criada"`
+	ID          string      `json:"id"`
+	Nome        string      `json:"nome"`
+	SegredoHash string      `json:"segredo_hash"`
+	ConviteHash string      `json:"convite_hash"`
+	Parceiros   []parceiro  `json:"parceiros"`
+	Pedidos     []pedido    `json:"pedidos"`
+	ProximoID   int         `json:"proximo_id"`
+	Criada      time.Time   `json:"criada"`
+	Push        []inscricao `json:"push,omitempty"` // aparelhos do dono que recebem aviso
 }
 
 // --- guardar em disco ------------------------------------------------------------
@@ -205,6 +207,7 @@ type servidor struct {
 	arm     *armazem
 	prefixo string
 	limites *limitador
+	vapid   vapid
 }
 
 func main() {
@@ -217,7 +220,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	s := &servidor{arm: arm, prefixo: strings.TrimRight(*prefixo, "/"), limites: novoLimitador()}
+	v, err := carregarVAPID(*dados)
+	if err != nil {
+		log.Fatal(err)
+	}
+	s := &servidor{arm: arm, prefixo: strings.TrimRight(*prefixo, "/"), limites: novoLimitador(), vapid: v}
 	go s.faxinaSempre()
 
 	l, err := net.Listen("tcp", "0.0.0.0:"+*porta)
@@ -255,6 +262,12 @@ func (s *servidor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.entrar(w, r)
 	case rota == "/saude":
 		fmt.Fprintln(w, "ok")
+	case r.Method == "GET" && rota == "/vapid":
+		s.chavePush(w, r)
+	case rota == "/conta/push" && (r.Method == "POST" || r.Method == "DELETE"):
+		s.comoDono(w, r, s.pushDono)
+	case rota == "/meus/push" && (r.Method == "POST" || r.Method == "DELETE"):
+		s.comoParceiro(w, r, s.pushParceiro)
 
 	// --- lado do dono (Bearer c_…) ---
 	case r.Method == "GET" && rota == "/conta":
@@ -485,6 +498,9 @@ func (s *servidor) mudarPedido(w http.ResponseWriter, r *http.Request, id, pedid
 		return
 	}
 	achou := false
+	var feito *pedido
+	var avisar parceiro
+	var dono string
 	_, err = s.arm.alterar(id, func(c *conta) error {
 		for i := range c.Pedidos {
 			if c.Pedidos[i].ID != n {
@@ -495,6 +511,13 @@ func (s *servidor) mudarPedido(w http.ResponseWriter, r *http.Request, id, pedid
 			case "feito":
 				agora := time.Now()
 				c.Pedidos[i].Feito, c.Pedidos[i].FeitoEm = true, &agora
+				cp := c.Pedidos[i]
+				feito, dono = &cp, c.Nome
+				for _, p := range c.Parceiros {
+					if p.ID == cp.Parceiro {
+						avisar = p
+					}
+				}
 			case "reabrir":
 				c.Pedidos[i].Feito, c.Pedidos[i].FeitoEm = false, nil
 			case "apagar":
@@ -513,6 +536,9 @@ func (s *servidor) mudarPedido(w http.ResponseWriter, r *http.Request, id, pedid
 	if !achou {
 		erro(w, http.StatusNotFound, "pedido não existe")
 		return
+	}
+	if feito != nil && len(avisar.Push) > 0 {
+		go s.avisarParceiro(id, avisar, dono, *feito)
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -577,7 +603,7 @@ func (s *servidor) novoPedido(w http.ResponseWriter, r *http.Request, id string,
 		return
 	}
 	var novo pedido
-	_, err := s.arm.alterar(id, func(c *conta) error {
+	c, err := s.arm.alterar(id, func(c *conta) error {
 		if len(c.Pedidos) >= maxPedidosConta {
 			return errors.New("a lista está cheia — o dono precisa concluir alguns pedidos")
 		}
@@ -590,6 +616,7 @@ func (s *servidor) novoPedido(w http.ResponseWriter, r *http.Request, id string,
 		erro(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	go s.avisarDono(id, append([]inscricao{}, c.Push...), novo)
 	escrever(w, http.StatusCreated, novo)
 }
 
