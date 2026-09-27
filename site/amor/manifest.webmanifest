@@ -1,0 +1,15 @@
+{
+  "name": "Pedidos — EDNA",
+  "short_name": "Pedidos",
+  "description": "Mande pedidos direto para a lista de quem você ama.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fff7f5",
+  "theme_color": "#e0457b",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

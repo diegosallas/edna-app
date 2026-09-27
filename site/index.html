@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EDNA — suas tarefas do dia, sem cadastro</title>
+<meta name="description" content="EDNA organiza o seu dia: escreva do jeito que fala (“dentista sexta 9h”) e ela põe no lugar certo. Grátis, sem conta, funciona no celular e no PC.">
+<meta property="og:title" content="EDNA — suas tarefas do dia, sem cadastro">
+<meta property="og:description" content="Escreva do jeito que fala e a EDNA organiza. Grátis, sem conta, no celular e no PC.">
+<meta property="og:image" content="app/icone-512.png">
+<meta name="theme-color" content="#14151a">
+<link rel="icon" href="app/icone-192.png">
+<style>
+  :root {
+    --fundo: #f6f4ef; --painel: #ffffff; --linha: #e4e0d6; --texto: #1c1b19; --suave: #5f5b53;
+    --ambar: #b7791f; --ambar-forte: #f2b134; --escuro: #14151a; --claro-no-escuro: #ecebe6;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fundo: #14151a; --painel: #1c1e24; --linha: #2a2d35; --texto: #ecebe6; --suave: #a3a7b2;
+      --ambar: #f2b134; color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fundo); color: var(--texto); font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  a { color: inherit; }
+  .miolo { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+
+  header.topo { display: flex; align-items: center; gap: 10px; padding: 18px 0; }
+  header.topo img { width: 32px; height: 32px; border-radius: 8px; }
+  header.topo b { letter-spacing: .16em; }
+  header.topo nav { margin-left: auto; display: flex; gap: 18px; font-size: 15px; }
+  header.topo nav a { text-decoration: none; color: var(--suave); }
+  header.topo nav a:hover { color: var(--texto); }
+
+  .heroi { display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; align-items: center; padding: 40px 0 56px; }
+  .heroi h1 { font-size: clamp(34px, 5vw, 54px); line-height: 1.08; letter-spacing: -.02em; margin: 0 0 16px; }
+  .heroi h1 em { font-style: normal; color: var(--ambar); }
+  .heroi p { font-size: 19px; color: var(--suave); margin: 0 0 28px; max-width: 34em; }
+  .botoes { display: flex; gap: 12px; flex-wrap: wrap; }
+  .botao { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-weight: 650;
+           border-radius: 12px; padding: 14px 22px; border: 1px solid var(--linha); }
+  .botao.principal { background: var(--ambar-forte); color: #1c1b19; border-color: var(--ambar-forte); }
+  .botao.principal:hover { filter: brightness(1.05); }
+  .botao:not(.principal):hover { background: var(--painel); }
+  .nota { font-size: 14px; color: var(--suave); margin-top: 12px; }
+
+  /* A "tela" de exemplo: a lousa em miniatura, desenhada em HTML. */
+  .tela { background: var(--escuro); color: var(--claro-no-escuro); border-radius: 22px; padding: 18px;
+          box-shadow: 0 20px 60px rgba(0,0,0,.25); font-size: 14px; }
+  .tela .rotulo { font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; margin: 10px 0 6px; }
+  .tela .rotulo.hoje { color: #f2b134; } .tela .rotulo.agenda { color: #5aa9e6; }
+  .tela .item { background: #1c1e24; border-radius: 9px; padding: 9px 11px; margin-bottom: 6px; display: flex; gap: 9px; }
+  .tela .item i { width: 15px; height: 15px; border: 1.5px solid #3d424e; border-radius: 4px; flex: none; margin-top: 3px; }
+  .tela .item small { display: block; color: #8d919d; font-size: 12px; }
+  .tela .agenda-item small { color: #5aa9e6; }
+  .tela .digitando { margin-top: 12px; border: 1px solid #2a2d35; border-radius: 10px; padding: 9px 11px; color: #8d919d; }
+  .tela .digitando b { color: #ecebe6; font-weight: 500; }
+
+  section { padding: 56px 0; border-top: 1px solid var(--linha); }
+  section h2 { font-size: 30px; letter-spacing: -.01em; margin: 0 0 8px; }
+  section .sub { color: var(--suave); margin: 0 0 32px; max-width: 40em; }
+  .grade { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .cartao { background: var(--painel); border: 1px solid var(--linha); border-radius: 16px; padding: 22px; }
+  .cartao h3 { margin: 0 0 6px; font-size: 18px; }
+  .cartao p { margin: 0; color: var(--suave); font-size: 15.5px; }
+  .cartao code { font-size: 14px; background: var(--fundo); border: 1px solid var(--linha); border-radius: 6px; padding: 1px 6px; }
+
+  .passos { counter-reset: passo; list-style: none; padding: 0; margin: 0; }
+  .passos li { counter-increment: passo; position: relative; padding-left: 34px; margin-bottom: 8px; color: var(--suave); font-size: 15.5px; }
+  .passos li::before { content: counter(passo); position: absolute; left: 0; top: 1px; width: 22px; height: 22px; border-radius: 50%;
+                       background: var(--fundo); border: 1px solid var(--linha); font-size: 12.5px; text-align: center; line-height: 21px; color: var(--texto); }
+
+  .planos { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .plano { background: var(--painel); border: 1px solid var(--linha); border-radius: 18px; padding: 26px; display: flex; flex-direction: column; }
+  .plano.destaque { border-color: var(--ambar); box-shadow: 0 0 0 1px var(--ambar) inset; }
+  .plano .etiqueta { align-self: flex-start; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+                     border-radius: 999px; padding: 3px 10px; background: var(--fundo); border: 1px solid var(--linha); color: var(--suave); }
+  .plano.destaque .etiqueta { background: var(--ambar-forte); border-color: var(--ambar-forte); color: #1c1b19; }
+  .plano h3 { font-size: 24px; margin: 12px 0 2px; }
+  .plano .preco { color: var(--suave); margin: 0 0 16px; }
+  .plano ul { padding-left: 20px; margin: 0 0 22px; color: var(--suave); font-size: 15.5px; flex: 1; }
+  .plano ul li { margin-bottom: 6px; }
+  .plano .botao { align-self: flex-start; }
+
+  details { background: var(--painel); border: 1px solid var(--linha); border-radius: 12px; padding: 14px 18px; margin-bottom: 10px; }
+  summary { cursor: pointer; font-weight: 600; }
+  details p { color: var(--suave); margin: 10px 0 2px; font-size: 15.5px; }
+
+  footer { padding: 32px 0 48px; color: var(--suave); font-size: 14px; border-top: 1px solid var(--linha); }
+
+  @media (max-width: 820px) {
+    .heroi { grid-template-columns: 1fr; padding-top: 16px; }
+    .grade, .planos { grid-template-columns: 1fr; }
+    header.topo nav { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="miolo">
+  <header class="topo">
+    <img src="app/icone-192.png" alt="">
+    <b>EDNA</b>
+    <nav>
+      <a href="#como">Como funciona</a>
+      <a href="#amor">♥ Meu amor</a>
+      <a href="#instalar">Instalar</a>
+      <a href="#planos">Planos</a>
+      <a href="https://github.com/diegosallas/edna-app" rel="noopener">GitHub</a>
+      <a href="https://fazmeuapp.com.br/">fazmeuapp</a>
+    </nav>
+  </header>
+
+  <div class="heroi">
+    <div>
+      <h1>Escreva do jeito que fala.<br>A <em>EDNA</em> organiza o seu dia.</h1>
+      <p>“Dentista sexta 9h”, “pagar a luz dia 30”, “comprar ração”. Ela entende a data sozinha e separa o que é pra hoje, o que tem hora marcada e o que pode esperar. E quem você ama manda pedidos direto pra sua lista — por texto ou por voz.</p>
+      <div class="botoes">
+        <a class="botao principal" href="app/">Usar grátis agora →</a>
+        <a class="botao" href="#instalar">Instalar no celular ou PC</a>
+        <a class="botao" href="https://github.com/diegosallas/edna-app" rel="noopener">Baixar no GitHub</a>
+      </div>
+      <p class="nota">Sem cadastro, sem cartão. Suas tarefas ficam só no seu aparelho. Código aberto (MIT).</p>
+    </div>
+    <div class="tela" aria-hidden="true">
+      <div class="rotulo hoje">Hoje</div>
+      <div class="item"><i></i><div>Pagar a conta de luz<small>hoje</small></div></div>
+      <div class="item"><i></i><div>Comprar ração<small>hoje</small></div></div>
+      <div class="rotulo agenda">Compromissos</div>
+      <div class="item agenda-item"><i></i><div>Dentista<small>sex 26/09 09:00</small></div></div>
+      <div class="rotulo" style="color:#f472b6">♥ Meu amor</div>
+      <div class="item" style="box-shadow: inset 3px 0 0 #e5484d"><i></i><div><span style="font-size:10px;font-weight:700;letter-spacing:.08em;background:#e5484d;color:#fff;border-radius:4px;padding:1px 5px;margin-right:6px">URGENTE</span>Pegar o remédio da mãe<small>Nay · pediu hoje 14:32</small></div></div>
+      <div class="digitando">“<b>reunião da escola amanhã 3 da tarde</b>” → amanhã 15:00</div>
+    </div>
+  </div>
+</div>
+
+<section id="como">
+  <div class="miolo">
+    <h2>Como funciona</h2>
+    <p class="sub">Quatro colunas, do jeito que o dia acontece. Você não escolhe a coluna: ela é consequência da data.</p>
+    <div class="grade">
+      <div class="cartao"><h3>Hoje</h3><p>O que vence hoje — e o que ficou para trás, marcado em vermelho para não passar batido.</p></div>
+      <div class="cartao"><h3>Compromissos</h3><p>O que tem hora marcada, do mais próximo para o mais distante: <code>consulta amanhã 14h</code>.</p></div>
+      <div class="cartao"><h3>Próximos dias e Tarefas</h3><p>O que tem dia mas não tem hora, e o “algum dia” sem data nenhuma.</p></div>
+      <div class="cartao"><h3>Entende português de verdade</h3><p><code>sexta às 3 da tarde</code>, <code>dia 30</code>, <code>amanhã de manhã</code>, <code>em 3 dias</code>. Na dúvida, não inventa prazo.</p></div>
+      <div class="cartao"><h3>Funciona sem internet</h3><p>Depois de aberta uma vez, a EDNA abre offline. Instalada, vira ícone como qualquer app.</p></div>
+      <div class="cartao"><h3>Privada por padrão</h3><p>Suas tarefas não saem do seu aparelho: não tem conta, não tem senha, não tem anúncio.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="amor">
+  <div class="miolo">
+    <h2>♥ Meu amor</h2>
+    <p class="sub">A parte que faz a casa funcionar: quem você ama manda pedidos direto para a sua lista. Sem cadastro — só um link.</p>
+    <div class="grade">
+      <div class="cartao"><h3>1. Você convida</h3><p>No menu ⋯ → <b>Convidar meu amor</b>. A EDNA gera um link; você manda no WhatsApp.</p></div>
+      <div class="cartao"><h3>2. A pessoa instala</h3><p>Quem abre o link ganha um app só de pedidos: escreve (ou fala), escolhe <b>quando der</b> ou <b>urgente</b>, pronto.</p></div>
+      <div class="cartao"><h3>3. Cai na sua coluna ♥</h3><p>Urgente sobe em vermelho. Você conclui, e do lado de lá aparece <b>feito ✓</b>. Sem grupo de WhatsApp, sem “você viu minha mensagem?”.</p></div>
+      <div class="cartao"><h3>Por voz, sem ninguém ouvindo</h3><p>A pessoa segura o microfone e fala. A voz é transcrita <b>dentro do próprio celular</b> — o nosso servidor só recebe o texto. Nem Google, nem Apple, nem a gente escuta.</p></div>
+      <div class="cartao"><h3>Você manda no link</h3><p>Trocar o link ou desligar todo mundo é um toque. Até 5 pessoas por lista.</p></div>
+      <div class="cartao"><h3>Grátis</h3><p>Pedido é só texto curto — custa quase nada guardar, então é grátis mesmo.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="instalar">
+  <div class="miolo">
+    <h2>Instalar</h2>
+    <p class="sub">A EDNA é um app instalável pelo navegador: não precisa de loja, e atualiza sozinha.</p>
+    <div class="grade">
+      <div class="cartao">
+        <h3>Android</h3>
+        <ol class="passos">
+          <li>Abra <a href="app/">a EDNA</a> no Chrome.</li>
+          <li>Toque em <b>Instalar</b> no topo (ou menu ⋮ → <b>Instalar app</b>).</li>
+          <li>Pronto: o ícone aparece junto dos seus apps.</li>
+        </ol>
+      </div>
+      <div class="cartao">
+        <h3>iPhone</h3>
+        <ol class="passos">
+          <li>Abra <a href="app/">a EDNA</a> no Safari.</li>
+          <li>Toque em <b>Compartilhar</b> (o quadrado com a seta).</li>
+          <li>Escolha <b>Adicionar à Tela de Início</b>.</li>
+        </ol>
+      </div>
+      <div class="cartao">
+        <h3>PC (Windows, Mac, Linux)</h3>
+        <ol class="passos">
+          <li>Abra <a href="app/">a EDNA</a> no Chrome ou no Edge.</li>
+          <li>Clique no ícone de instalar na barra de endereço, ou em <b>Instalar</b> no topo do app.</li>
+          <li>Ela abre em janela própria, sem barra de navegador.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="planos">
+  <div class="miolo">
+    <h2>Planos</h2>
+    <p class="sub">Comece de graça. O Pro é para quem quer a EDNA em todos os aparelhos e na voz.</p>
+    <div class="planos">
+      <div class="plano">
+        <span class="etiqueta">Disponível</span>
+        <h3>Grátis</h3>
+        <p class="preco">R$ 0, para sempre</p>
+        <ul>
+          <li>Hoje, compromissos, próximos dias e tarefas</li>
+          <li>Entende data escrita em português</li>
+          <li><b>♥ Meu amor:</b> pedidos de quem você ama, por texto ou voz</li>
+          <li>Instala no celular e no PC, funciona offline</li>
+          <li>Sem conta: suas tarefas ficam no seu aparelho</li>
+          <li>Backup em arquivo, quando quiser</li>
+        </ul>
+        <a class="botao principal" href="app/">Usar grátis</a>
+      </div>
+      <div class="plano destaque">
+        <span class="etiqueta">Em breve</span>
+        <h3>Pro</h3>
+        <p class="preco">Assinatura mensal — preço no lançamento</p>
+        <ul>
+          <li>Sincroniza celular e PC na sua conta</li>
+          <li>Fale a sua própria tarefa: vira item com data, sozinha</li>
+          <li>Integração com a sua agenda</li>
+          <li>Lembretes no horário</li>
+          <li>Suporte com gente de verdade</li>
+        </ul>
+        <a class="botao" href="mailto:contato@fazmeuapp.com.br?subject=EDNA%20Pro%20%E2%80%94%20lista%20de%20espera&amp;body=Quero%20ser%20avisado%20quando%20o%20EDNA%20Pro%20lan%C3%A7ar.">Entrar na lista de espera</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="miolo">
+    <h2>Perguntas</h2>
+    <details><summary>É grátis mesmo?</summary><p>Sim. A versão grátis roda inteira no seu navegador e não usa servidor nenhum — por isso não custa nada para ninguém e não tem anúncio.</p></details>
+    <details><summary>Onde ficam as minhas tarefas?</summary><p>No armazenamento do seu navegador, no seu aparelho. Nós não vemos nada. Se limpar os dados do navegador, elas somem — por isso existe o botão de backup no menu ⋯.</p></details>
+    <details><summary>Consigo usar no celular e no PC ao mesmo tempo?</summary><p>Na grátis, cada aparelho tem a sua lista (dá para levar de um para o outro com o backup). Sincronizar sozinho é do plano Pro.</p></details>
+    <details><summary>O que sai do meu aparelho no “Meu amor”?</summary><p>Só os pedidos: quem pediu, o texto e se é urgente. Ficam no servidor da fazmeuapp, protegidos por chaves que só existem nos aparelhos de vocês (nem nós conseguimos abrir sem elas). A voz de quem fala é transcrita no próprio celular; áudio não sai dele. Pedidos concluídos são apagados depois de 30 dias.</p></details>
+    <details><summary>Quem fez?</summary><p>A <a href="https://fazmeuapp.com.br/">fazmeuapp</a>. A EDNA nasceu como a secretária pessoal do Diego — e agora está aberta para você.</p></details>
+    <details><summary>Posso ver o código?</summary><p>Pode: é aberto, licença MIT, em <a href="https://github.com/diegosallas/edna-app" rel="noopener">github.com/diegosallas/edna-app</a>. Quem quiser rodar a própria EDNA no próprio servidor encontra lá as instruções.</p></details>
+  </div>
+</section>
+
+<footer>
+  <div class="miolo">EDNA · feito pela <a href="https://fazmeuapp.com.br/">fazmeuapp</a> · <a href="mailto:contato@fazmeuapp.com.br">contato@fazmeuapp.com.br</a></div>
+</footer>
+</body>
+</html>

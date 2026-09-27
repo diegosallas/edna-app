@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>EDNA</title>
+<meta name="description" content="Suas tarefas do dia, sem cadastro. Escreva do jeito que fala: “consulta amanhã 14h”.">
+<meta name="theme-color" content="#14151a" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f6f4ef" media="(prefers-color-scheme: light)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="EDNA">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icone-192.png">
+<link rel="apple-touch-icon" href="icone-180.png">
+<style>
+  :root {
+    --fundo: #f6f4ef; --painel: #ffffff; --linha: #e4e0d6; --texto: #1c1b19; --suave: #6b675e;
+    --hoje: #b7791f; --compromisso: #2f6fa8; --proximos: #6d4fc7; --tarefas: #6b675e;
+    --feito: #1f8a5b; --perigo: #c93a3f; --destaque: #1c1b19; --sobre-destaque: #ffffff;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fundo: #14151a; --painel: #1c1e24; --linha: #2a2d35; --texto: #ecebe6; --suave: #8d919d;
+      --hoje: #f2b134; --compromisso: #5aa9e6; --proximos: #a78bfa; --tarefas: #8b93a7;
+      --feito: #3ecf8e; --perigo: #e5484d; --destaque: #ecebe6; --sobre-destaque: #14151a;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--fundo); color: var(--texto); }
+  body {
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex; flex-direction: column;
+    padding-top: env(safe-area-inset-top);
+    -webkit-tap-highlight-color: transparent;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+
+  header { display: flex; align-items: center; gap: 10px; padding: 12px 16px 8px; }
+  header h1 { margin: 0; font-size: 17px; letter-spacing: .16em; font-weight: 750; }
+  header .dia { color: var(--suave); font-size: 13px; }
+  header .acoes { margin-left: auto; display: flex; gap: 6px; }
+  .botao-leve {
+    background: none; border: 1px solid var(--linha); border-radius: 999px;
+    padding: 5px 12px; font-size: 13px; color: var(--suave);
+  }
+  .botao-leve:hover { color: var(--texto); }
+  #instalar { display: none; border-color: var(--hoje); color: var(--hoje); }
+
+  /* Abas: só no celular. No PC as quatro colunas ficam lado a lado. */
+  nav.abas { display: flex; gap: 4px; padding: 0 12px 8px; overflow-x: auto; }
+  nav.abas button {
+    flex: 1; background: var(--painel); border: 1px solid var(--linha); border-radius: 10px;
+    padding: 7px 4px; font-size: 12.5px; color: var(--suave); white-space: nowrap;
+  }
+  nav.abas button.ativa { background: var(--destaque); color: var(--sobre-destaque); border-color: var(--destaque); }
+  nav.abas .n { opacity: .7; margin-left: 3px; }
+
+  main { flex: 1; min-height: 0; padding: 0 12px; overflow-y: auto; }
+  section { display: none; }
+  section.ativa { display: block; }
+  section h2 {
+    display: none; margin: 0 0 8px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+    padding-bottom: 6px; border-bottom: 1px solid var(--linha);
+  }
+  section h2 .n { float: right; opacity: .6; }
+  #hoje h2 { color: var(--hoje); }
+  #compromissos h2 { color: var(--compromisso); }
+  #proximos h2 { color: var(--proximos); }
+  #tarefas h2 { color: var(--tarefas); }
+  #amor h2 { color: var(--amor); }
+  :root { --amor: #c2417f; }
+  @media (prefers-color-scheme: dark) { :root { --amor: #f472b6; } }
+  #amor li { box-shadow: inset 3px 0 0 color-mix(in srgb, var(--amor) 55%, transparent); }
+  #amor li.urgente { box-shadow: inset 3px 0 0 var(--perigo); }
+  .selo { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700;
+          border-radius: 4px; padding: 1px 5px; margin-right: 6px; vertical-align: 1px; background: var(--perigo); color: #fff; }
+  .convite-vazio { text-align: center; padding: 18px 8px; color: var(--suave); font-size: 14.5px; }
+  .convite-vazio .botao-cheio { margin-top: 10px; }
+  .botao-cheio { background: var(--destaque); color: var(--sobre-destaque); border: none; border-radius: 10px; padding: 10px 16px; font-weight: 650; }
+  #link-convite { font-size: 13px; word-break: break-all; background: var(--fundo); border: 1px solid var(--linha); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; user-select: all; }
+  .opcoes button.zap { background: #25d366; color: #fff; border-color: #25d366; font-weight: 650; }
+
+  @media (min-width: 820px) {
+    nav.abas { display: none; }
+    main { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; overflow: hidden; }
+    section, section.ativa { display: flex; flex-direction: column; min-height: 0; }
+    section h2 { display: block; }
+    section ul { overflow-y: auto; }
+  }
+
+  ul { list-style: none; margin: 0; padding: 0 0 12px; }
+  li {
+    display: flex; gap: 10px; align-items: flex-start; background: var(--painel);
+    border: 1px solid var(--linha); border-radius: 10px; padding: 10px 10px 10px 12px; margin-bottom: 6px;
+  }
+  li.atrasada { box-shadow: inset 3px 0 0 var(--perigo); }
+  .caixa {
+    flex: none; width: 22px; height: 22px; margin-top: 1px; border-radius: 6px;
+    border: 2px solid var(--linha); background: none; padding: 0;
+  }
+  .caixa:hover { border-color: var(--feito); }
+  li.feito .caixa { background: var(--feito); border-color: var(--feito); }
+  li.feito .texto { text-decoration: line-through; color: var(--suave); }
+  .texto { flex: 1; min-width: 0; word-break: break-word; }
+  .quando { display: block; font-size: 12.5px; color: var(--suave); margin-top: 2px; }
+  #compromissos .quando { color: var(--compromisso); }
+  li.atrasada .quando { color: var(--perigo); }
+  .mais { flex: none; background: none; border: none; color: var(--suave); font-size: 18px; line-height: 1; padding: 2px 6px; border-radius: 6px; }
+  .mais:hover { background: var(--fundo); color: var(--texto); }
+  .vazio { color: var(--suave); font-size: 14px; padding: 8px 4px 16px; }
+  .vazio code { background: var(--painel); border: 1px solid var(--linha); border-radius: 5px; padding: 1px 5px; font-size: 13px; }
+
+  footer {
+    padding: 10px 12px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--linha);
+    background: var(--fundo);
+  }
+  form#nova { display: flex; gap: 8px; }
+  #entrada {
+    flex: 1; min-width: 0; font: inherit; font-size: 16px; color: var(--texto); background: var(--painel);
+    border: 1px solid var(--linha); border-radius: 12px; padding: 11px 14px;
+  }
+  #entrada:focus { outline: 2px solid var(--hoje); outline-offset: -1px; }
+  #entrada::placeholder { color: var(--suave); }
+  #anotar { border: none; border-radius: 12px; padding: 0 18px; background: var(--destaque); color: var(--sobre-destaque); font-weight: 650; }
+  #previa { min-height: 18px; font-size: 12.5px; color: var(--suave); margin: 6px 4px 0; }
+
+  #aviso {
+    position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+    background: var(--destaque); color: var(--sobre-destaque); border-radius: 999px; padding: 8px 8px 8px 16px;
+    font-size: 14px; display: none; align-items: center; gap: 10px; max-width: calc(100% - 32px);
+    box-shadow: 0 6px 24px rgba(0,0,0,.25);
+  }
+  #aviso.visivel { display: flex; }
+  #aviso button { background: none; border: 1px solid currentColor; border-radius: 999px; padding: 3px 10px; font-size: 13px; color: inherit; }
+
+  dialog {
+    border: 1px solid var(--linha); border-radius: 16px; background: var(--painel); color: var(--texto);
+    padding: 16px; width: min(420px, calc(100% - 24px)); box-shadow: 0 12px 40px rgba(0,0,0,.3);
+  }
+  dialog::backdrop { background: rgba(0,0,0,.35); }
+  dialog h3 { margin: 0 0 4px; font-size: 16px; }
+  dialog p { margin: 0 0 12px; color: var(--suave); font-size: 14px; }
+  .opcoes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .opcoes button, .linha-botoes button {
+    background: var(--fundo); border: 1px solid var(--linha); border-radius: 10px; padding: 10px; text-align: center;
+  }
+  .opcoes button.perigo { color: var(--perigo); border-color: color-mix(in srgb, var(--perigo) 40%, var(--linha)); }
+  .opcoes button.largo { grid-column: 1 / -1; }
+  dialog input {
+    width: 100%; font: inherit; font-size: 16px; color: var(--texto); background: var(--fundo);
+    border: 1px solid var(--linha); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px;
+  }
+  .linha-botoes { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+  .linha-botoes .principal { background: var(--destaque); color: var(--sobre-destaque); border-color: var(--destaque); }
+  #lista-feitas { max-height: 50vh; overflow-y: auto; margin-bottom: 12px; }
+  #lista-feitas li { cursor: default; }
+  .ajuda { font-size: 13px; color: var(--suave); }
+  .ajuda a { color: inherit; }
+</style>
+</head>
+<body>
+<header>
+  <h1>EDNA</h1>
+  <span class="dia" id="dia"></span>
+  <div class="acoes">
+    <button class="botao-leve" id="instalar">Instalar</button>
+    <button class="botao-leve" id="abrir-menu" aria-label="Menu">⋯</button>
+  </div>
+</header>
+
+<nav class="abas" id="abas">
+  <button data-aba="hoje" class="ativa">Hoje<span class="n"></span></button>
+  <button data-aba="compromissos">Agenda<span class="n"></span></button>
+  <button data-aba="proximos">Próximos<span class="n"></span></button>
+  <button data-aba="tarefas">Tarefas<span class="n"></span></button>
+  <button data-aba="amor">♥<span class="n"></span></button>
+</nav>
+
+<main>
+  <section id="amor"><h2>Meu amor <span class="n"></span></h2><ul></ul></section>
+  <section id="hoje" class="ativa"><h2>Hoje <span class="n"></span></h2><ul></ul></section>
+  <section id="compromissos"><h2>Compromissos <span class="n"></span></h2><ul></ul></section>
+  <section id="proximos"><h2>Próximos dias <span class="n"></span></h2><ul></ul></section>
+  <section id="tarefas"><h2>Tarefas <span class="n"></span></h2><ul></ul></section>
+</main>
+
+<footer>
+  <form id="nova" autocomplete="off">
+    <input id="entrada" enterkeyhint="done" placeholder="Anotar…  ex.: consulta amanhã 14h" aria-label="Nova tarefa">
+    <button id="anotar" type="submit">Anotar</button>
+  </form>
+  <div id="previa" aria-live="polite"></div>
+</footer>
+
+<div id="aviso" role="status"><span id="aviso-texto"></span><button id="aviso-botao" hidden>desfazer</button></div>
+
+<dialog id="menu-item">
+  <h3 id="item-titulo"></h3>
+  <p id="item-quando"></p>
+  <div class="opcoes">
+    <button data-acao="hoje">Para hoje</button>
+    <button data-acao="amanha">Para amanhã</button>
+    <button data-acao="data">Mudar data…</button>
+    <button data-acao="sem-data">Sem data</button>
+    <button data-acao="editar" class="largo">Editar texto…</button>
+    <button data-acao="apagar" class="perigo largo">Apagar</button>
+  </div>
+</dialog>
+
+<dialog id="caixa-texto">
+  <h3 id="caixa-titulo"></h3>
+  <p id="caixa-dica"></p>
+  <form id="caixa-form">
+    <input id="caixa-campo" autocomplete="off">
+    <div class="linha-botoes">
+      <button type="button" id="caixa-cancelar">Cancelar</button>
+      <button type="submit" class="principal">Salvar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="menu-app">
+  <h3>EDNA grátis</h3>
+  <p>Suas tarefas ficam só neste aparelho — sem conta, sem servidor. Faça backup de vez em quando.</p>
+  <div class="opcoes">
+    <button data-acao="amor" class="largo">♥ Convidar meu amor</button>
+    <button data-acao="feitas" class="largo">Ver concluídas</button>
+    <button data-acao="exportar">Baixar backup</button>
+    <button data-acao="importar">Restaurar backup</button>
+    <button data-acao="sobre" class="largo">Sobre a EDNA e o plano Pro</button>
+  </div>
+  <input type="file" id="arquivo-backup" accept="application/json,.json" hidden>
+  <div class="linha-botoes"><button data-acao="fechar">Fechar</button></div>
+</dialog>
+
+<dialog id="menu-amor">
+  <h3>♥ Meu amor</h3>
+  <p id="amor-explica">Quem você ama manda pedidos direto para a sua lista — sem cadastro, só com este link.</p>
+  <div id="link-convite" hidden></div>
+  <div class="opcoes" id="amor-opcoes">
+    <button data-acao="zap" class="zap largo">Mandar no WhatsApp</button>
+    <button data-acao="copiar">Copiar link</button>
+    <button data-acao="novo-link">Trocar link</button>
+    <button data-acao="desligar" class="perigo largo">Desligar todo mundo</button>
+  </div>
+  <p class="ajuda" id="amor-quem"></p>
+  <div class="linha-botoes"><button data-acao="fechar">Fechar</button></div>
+</dialog>
+
+<dialog id="feitas">
+  <h3>Concluídas</h3>
+  <ul id="lista-feitas"></ul>
+  <div class="linha-botoes"><button data-acao="fechar">Fechar</button></div>
+</dialog>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

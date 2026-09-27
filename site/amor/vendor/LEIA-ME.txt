@@ -1,0 +1,3 @@
+@huggingface/transformers 3.8.1 (Apache-2.0) — dist/transformers.min.js e o ONNX Runtime Web que vem junto.
+Servidos daqui, e não de um CDN, para o código que ouve a voz ser exatamente o que foi revisado.
+Atualizar: npm pack @huggingface/transformers@<versão>; copiar os 3 arquivos de dist/.
